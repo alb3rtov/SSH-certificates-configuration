@@ -34,7 +34,7 @@ root@ca-auth# scp root@172.17.0.3:/etc/ssh/ssh_host_rsa_key.pub .
 ```
 
 ## Step 4
-How generate the certificate from the public key that we have generated and copied in the previous step. For this we are going to use the private key generated in step 1 called host-ca.
+Now you have to generate the certificate from the public key generated and copied in the previous step. To do this, use the private key generated in step 1 called host-ca.
 ```
 root@ca-auth# ssh-keygen -s host-ca -I dev_host_server -h -V +52w ssh_host_rsa_key.pub
 ```
@@ -55,6 +55,73 @@ Remove the obsolete public key and the host certificate from the CA server.
 root@ca-auth# rm ssh_host_rsa_key-cert.pub ssh_host_rsa_key.pub
 ```
 
+## Step 6
+Now from the SSH host server the copied certificate must be configured. To do this, add it to the configuration file located in the path `/etc/ssh/sshd_config`.
+```
+root@host-server# echo 'HostCertificate /etc/ssh/ssh_host_rsa_key-cert.pub' | tee -a /etc/ssh/sshd_config
+```
 
+And restart the SSH service.
+```
+root@host-server# service ssh restart # Ubuntu/Debian
+```
 
+## Step 7
+To configure the SSH client, the public key of the certification authority is required, as it must be stored in the /.ssh/known_hosts file of the clients to be configured. For example, you can first copy the public key to the client and then configure it.
 
+Now from the SSH client, you have to configure the public key as a certification authority. The "\*" indicates the list of servers that have signed their host key. In the case of "\*", it indicates that you allow all servers.
+```
+root@client# echo ‘@cert-authority * clave-publica-host-ca’ | tee -a ~/.ssh/known_hosts
+```
+
+## Step 8
+A key pair must be generated on the certification authority's server, which will be used to sign the user's certificates.
+```
+root@ca-auth# ssh-keygen -t rsa -C CLIENT-CA -b 4096 -f client-ca
+```
+
+## Step 9
+Copy the public key generated in the previous step to the SSH host server **(NOT to the clients)**.
+```
+root@ca-auth# scp client-ca.pub root@172.17.0.3:/etc/ssh/client-ca.pub
+```
+
+## Step 10
+From the SSH host server, the copied public key must be configured by adding it to the SSH configuration file located in `/etc/ssh/sshd_config`.
+```
+root@host-server# echo 'TrustedUserCAKeys /etc/ssh/client-ca.pub' | tee -a /etc/ssh/sshd_config
+```
+
+And restart the SSH service.
+```
+root@host-server# service ssh restart # Ubuntu/Debian
+```
+
+## Step 11
+To test the operation, a key pair must be generated in the SSH client, setting a passphrase and a name for the public and private key.
+```
+test@client:$ ssh-keygen -t rsa -b 4096
+```
+
+The public key must be copied to the CA server.
+```
+test@client:$ scp ~/.ssh/id_rsa.pub root@172.17.0.2:/id_rsa.pub
+```
+
+It is necessary to sign with the private key of the users' CA to generate the certificate. In this case the -n option must be added to indicate a list of users with whom the certificate will be valid to authenticate.
+```
+root@ca-auth# ssh-keygen -s client-ca -I test -n root,test -V +52w -z 1 id_rsa.pub
+```
+
+## Step 12
+The certificate generated in the previous step must be copied and stored in the user's `/.ssh` directory.
+```
+root@ca-auth# scp id_rsa-cert.pub test@172.17.0.4:/home/test/.ssh/id_rsa-cert.pub
+```
+
+Finally, it is necessary to test the operation using the SSH client. From the /.ssh directory, try to access the SSH host server.
+```
+test@client:$ ssh -v root@172.17.0.3
+
+test@client:$ ssh -v test@172.17.0.3
+```
