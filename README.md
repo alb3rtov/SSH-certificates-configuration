@@ -1,4 +1,4 @@
-# How to configure SSH certificates :page_with_curl:
+# :page_with_curl: How to configure SSH certificates :page_with_curl:
 ## Scenario
 To configure SSH certificates it is necessary to have the following elements in our scenario:
 
