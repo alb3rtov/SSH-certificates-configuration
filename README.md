@@ -1,4 +1,5 @@
-# How to configure SSH certificates
+# How to configure SSH certificates :page_with_curl:
+## Scenario
 To configure SSH certificates it is necessary to have the following elements in our scenario:
 
 - Certificate Authority (CA) server
@@ -12,6 +13,14 @@ The certificate signed by the host CA is used to prove the host's authenticity t
 The SSH client could be a laptop or server of the user running the SSH client. The certificate signed by the client's CA is used to prove the client's authenticity to the host server.
 
 The following will explain the different steps and commands to be followed to configure the different servers and clients for SSH certificate-based authentication.
+
+## Enviroment setup
+For ease of configuration, I have created a `Dockerfile` with the necessary containers for the scenario configuration. The necessary hostnames, services and users are created and configured automatically. The configuration to be carried out is the one below.
+
+To automate the deployment of the environment use `Makefile` as follows:
+```
+command
+```
 
 ## Step 1
 Generate an SSH key pair from the CA Host (Certificate Authority Host), on the CA server.
